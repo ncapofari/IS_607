@@ -10,8 +10,6 @@ This week's assignment is to transform a data set for easier downstream analysis
 This data set can be found at:  https://raw.githubusercontent.com/fivethirtyeight/data/master/nfl-suspensions/nfl-suspensions-data.csv.  
 http://fivethirtyeight.com is an interesting site for the data enthusiast.  
 
-My original .Rmd file can be found at http://google.com.
-
 ```{r, include=FALSE}
 library(RCurl)
 x <- getURL("https://raw.githubusercontent.com/fivethirtyeight/data/master/nfl-suspensions/nfl-suspensions-data.csv")
