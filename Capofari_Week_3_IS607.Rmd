@@ -1,0 +1,46 @@
+---
+title: "Capofari_Week_3_IS607"
+author: "Nicholas Capofari"
+date: "September 11, 2015"
+output: html_document
+---
+
+This week's assignment is to transform a data set for easier downstream analysis. I understand that the assignment required the use of a data set from the UCI Machine Learning Repository, but I felt that since the football season is upon us the following data set would be pertinent.  I hope this is ok.
+
+This data set can be found at:  https://raw.githubusercontent.com/fivethirtyeight/data/master/nfl-suspensions/nfl-suspensions-data.csv.  
+http://fivethirtyeight.com is an interesting site for the data enthusiast.  
+
+My original .Rmd file can be found at http://google.com.
+
+```{r, include=FALSE}
+library(RCurl)
+x <- getURL("https://raw.githubusercontent.com/fivethirtyeight/data/master/nfl-suspensions/nfl-suspensions-data.csv")
+y <- read.csv(text = x)
+```
+The data set I chose lists all NFL suspensions from ```r min(y$year, na.rm = TRUE)``` to ```r max(y$year, na.rm = TRUE)```.  Here are the first 5 observations from the data set: 
+
+```{r, echo=FALSE}
+head(y)
+```
+
+For my purposes I want to focus on all substance abuse related suspensions from 1980 to ```r max(y$year, na.rm = TRUE)```.  All superflorous columns will be removed.
+
+```{r, echo=FALSE}
+trans_data <- subset(y, y$year > 1979 & y$category == "Substance abuse")
+keeps <- c("name", "team", "year", "games")
+trans_data <- trans_data[keeps]
+trans_data <- transform(trans_data, as.numeric(trans_data$Length))
+names(trans_data) <- c("Name", "Team", "Year", "Length")
+```
+
+Here are the first 5 observations from the transformed data set:
+```{r, echo=FALSE}
+head(trans_data, addrownums = FALSE)
+```
+And now it is much easier to work with the data:
+```{r, echo=FALSE}
+yrs <- max(trans_data$Year) - min(trans_data$Year)
+hist(trans_data$Year, main = "NFL Suspensions", sub = "1980-2014", xlab = "Years", ylab = "Suspensions", breaks = yrs)
+```
+
+
