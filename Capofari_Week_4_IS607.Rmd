@@ -1,0 +1,51 @@
+---
+title: "Capofari_Week_4_IS607"
+author: "Nicholas Capofari"
+date: "September 18, 2015"
+output: html_document
+---
+```{r, echo=FALSE}
+library(stringr)
+```
+###Example 4
+a) The regular expression [0-9]+\\$ takes the first instance of 1 or more digits concatenated with 1 $ symbol.
+```{r}
+unlist(str_extract_all("Bobby won 314.15$ and Alice won 271$.", "[0-9]+\\$"))
+```
+
+b) The regular expression \\b[a-z]{1,4}\\b matches strings of length 1, 2, 3, or 4, that are made of *only* lower case letters.
+```{r}
+unlist(str_extract_all("In my younger and more vulnerable years my father gave me some advice that I've been turning over in my mind ever since.", "\\b[a-z]{1,4}\\b"))
+```
+
+c) The regular expression .*?\\.txt$ matches all possible strings that end with .txt.
+```{r}
+sample_text <- c("my_text_file.txt", "my_python_file.py", "my other text file.txt")
+unlist(str_extract(sample_text, ".*?\\.txt$"))
+```
+
+d) The regular expression \\d{2}/\\d{2}/\\d{4} matches dates in the form ##/##/####.
+```{r}
+sample_text <- c("03/14/2015", "1/10/2011", "08/25/81")
+unlist(str_extract(sample_text, "\\d{2}/\\d{2}/\\d{4}"))
+```
+###Example 5
+[0-9]+\\$ can be rewritten as\\d(\\d)*\\${1}.  These two regular expressions will perform the same task.
+```{r}
+unlist(str_extract_all("Bobby won 271$ and Alice won 314.15$ and Chris won 1$.", "\\d(\\d)*\\${1}"))
+```
+###Example 6
+chunkylover[at]aol[dot]com
+```{r}
+e_mail <- "chunkylover53[at]aol[dot]com"
+e_mail <- str_replace(str_replace(e_mail, "\\[dot\\]", "."), "\\[at\\]", "@")
+e_mail
+unlist(str_extract_all(e_mail, "[:digit:]"))
+```
+The expression \\D matches all characters are *not* digits.  we should use \\d.
+```{r}
+unlist(str_extract_all(e_mail, "\\D"))
+unlist(str_extract_all(e_mail, "\\d"))
+```
+
+
