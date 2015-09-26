@@ -1,0 +1,91 @@
+---
+title: "CUNY SPS IS 607 Project #1"
+author: "Nicholas Capofari"
+date: "September 23, 2015"
+output:
+  html_document:
+    toc: true
+    toc_depth: 5
+---
+```{r, echo=FALSE, include=FALSE, cache=FALSE}
+require(stringr)
+theFile <- "https://raw.githubusercontent.com/ncapofari/IS_607/IS_607/chess_data.txt"
+chess_data <- readLines(theFile, warn = FALSE)
+unlink(theFile)
+```
+
+#####**The Assignment**
+In this project, you’re given a [text file]( https://raw.githubusercontent.com/ncapofari/IS_607/IS_607/chess_data.txt) with chess tournament results where the information has some structure. Your job is to create an R Markdown file that generates a [.CSV file](https://raw.githubusercontent.com/ncapofari/IS_607/IS_607/chess_data.csv) (that could for example be imported into a SQL database) with the following information for all of the players:
+Player’s Name, Player’s State, Total Number of Points, Player’s Pre-Rating, and Average Pre Chess Rating of Opponents
+
+#####**Raw Data**
+```{r, echo=FALSE}
+head(chess_data)
+```
+
+#####**Raw Data Manipulation**
+```{r}
+#remove the top rows of dat, they do not contain any player data
+chess_data <- chess_data[c(5:length(chess_data))]
+#remove any consecutive dashes and replace them with a place holder
+#the place holder will separate each player's data
+chess_data <- str_replace_all(string = chess_data, pattern = "--+", replacement = "@")
+#make the data a long string and split it at @
+chess_data <- unlist(strsplit(paste(chess_data, collapse = ""), split = "@"))
+#remove most symbols and replace them with commas
+chess_data <- str_replace_all(string = chess_data, pattern = "([:space:]|-|\\/|\\||\\>)+", replacement = ",")
+
+#regular expressions for player info
+#player_id are the 1st digits in string
+player_id <- str_sub(str_extract(chess_data, "^,\\d+"), start = 2)
+#player_name is made up of the first letter groups and commas
+#the commas are replaced by " " and the excess is trimmed off the fron and end
+player_name <- str_trim(str_replace_all(str_extract(chess_data, ",([:alpha:]|,)+"), ",", " "))
+#player_state is a 2 letter group that comes after a B or U or digit
+player_state <- str_sub(str_extract(chess_data, "(B|U|\\d),[:alpha:][:alpha:],\\d"), start = 3, end = 4)
+#total_points is 2 digits separted by a .
+total_points <- as.numeric(str_extract(chess_data, "\\d\\.\\d"))
+#pre_rating is the first group of digits after :,
+pre_rating <- as.numeric(str_sub(str_extract(chess_data, ":,\\d+"), start = 3))
+#post_rating is the first group of digits after pre_rating
+post_rating <- as.numeric(str_replace_all(str_extract(chess_data, ":,.*,\\d+"), pattern = ":,.*,", replacement = ""))
+
+#create a data frame with all of the relevant information
+chess_df <- data.frame(player_id, player_name, player_state, total_points, pre_rating, post_rating, stringsAsFactors = FALSE)
+```
+
+#####**Average Pre Rating Function**
+```{r}
+#function to find a player's opponents average pre rating
+avg_pre <- function (chess_data_string){
+  #extract opponent ids and results from string
+  history <- str_sub(str_extract(chess_data, "\\d\\.\\d.*[:alpha:][:alpha:]"), start = 5)
+  #extract just opponents as a list of strings
+  opponents_as_char <- str_extract_all(history, "\\d+")
+  #change list of strings to numbers
+  opponents <- lapply(opponents_as_char, as.numeric)
+  #helper function that will replace all opponent numbers with their pre_rating
+  rating_look_up <-function (i){
+    return (chess_df$pre_rating[i])
+  }
+  #use rating_look_up and sum the results
+  #this is then divided by the number of games played
+  opp_avg <- round(unlist(lapply(lapply(opponents, rating_look_up), sum))/str_count(history, "\\d+"), 0)
+}
+```
+
+#####**Final Data**
+```{r, echo=FALSE}
+#create a new column for function avg_pre
+chess_df$new_column <- avg_pre(chess_data)
+#remove player_id
+chess_df <- subset(chess_df, select = -player_id) 
+names(chess_df) <- c("Name", "State", "Total Pts", "Pre Rating", "Post Rating", "Opp Avg")
+head(chess_df)
+```
+
+#####**CSV File**
+```{r, echo = FALSE}
+write.csv(chess_df, file = "chess_data.csv")
+```
+[chess_data.csv](https://raw.githubusercontent.com/ncapofari/IS_607/IS_607/chess_data.csv)
