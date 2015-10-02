@@ -1,0 +1,110 @@
+---
+title: "Week_6_Assignment"
+author: "Nicholas Capofari"
+date: "September 29, 2015"
+output: 
+  html_document:
+    toc: true
+    theme: united
+    fig_width: 10
+---
+  
+###Data Retrieval
+The sample data for assignment 6 was stored as a table in a database.  
+I used the RMySQL package to retrieve the data.  
+```{r, set-options, echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, comment=""}
+options(width=80)
+
+library(DBI)
+library(RMySQL)
+
+con <- dbConnect(RMySQL::MySQL(), user="root", password="Elena1781", dbname = "week_6_db")
+results <- dbReadTable(con, "data_w6", row.names = NULL)
+dis <- dbDisconnect(con)
+
+results
+```
+
+###Tidy Data
+Using the tidyr and dplyr packages to create Tidy Data.  
+Here are the results:
+```{r, echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, comment=""}
+library(tidyr)
+library(dplyr)
+
+results$id <- NULL
+
+library(zoo)
+#used to fill in missing data in data frame
+#tried to ues the tidyr fill function but did not succeed
+results$airline <- ifelse(results$airline == "", NA, results$airline)
+results$airline <- na.locf(results$airline, na.rm=TRUE)
+
+#use the gather() function to create long data
+results <- results %>%
+  gather(city, freq, Los.Angeles:Seattle)
+
+library(stringr)
+#replace "." with spaces in the city names
+results$city <- unlist(str_replace_all(results$city, "\\.", " "))
+
+#rename column name and switch to true and false values
+colnames(results)[2] <- "ontime"
+results$ontime <- ifelse(results$ontime == "on time", "t", "f")
+
+head(results, 10)
+```
+
+###Analysis
+Perform analysis to compare the arrival delays for the two airlines:
+```{r, echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, comment=""}
+#I had trouble using the group_by function when grouping
+#by more than one variable but I found this post that helped
+#http://stackoverflow.com/questions/21208801/group-by-multiple-columns-in-dplyr-using-string-vector-input
+#Hadley Wickhman actually was the one who posted the answer
+
+grp_cols <- names(results)[1:2]
+dots <- lapply(grp_cols, as.symbol)
+airline_df <- as.data.frame(results %>%
+  group_by_(.dots=dots) %>%
+  summarise(frequency = sum(freq)) %>%
+  mutate(prop = round(frequency / sum(frequency),2))) %>%
+  arrange(airline)
+
+library(ggplot2)
+library(scales)
+graph_one <- ggplot(airline_df, aes(x=airline, y=prop, fill=ontime)) +
+  geom_bar(stat="identity") + 
+  labs(x="", y="", title="Flight Delays") + 
+  scale_fill_discrete(guide = guide_legend(title="Flights"), 
+                      labels=c("Delayed", "On Time")) +
+  scale_y_continuous(labels=percent)
+graph_one
+```
+
+###Second Look
+If we take a second look at the data without Phoenix, the amount of AM WEST flights that are delayed increases dramatically.
+```{r, echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, comment=""}
+grp_cols <- names(results)[1:2]
+dots <- lapply(grp_cols, as.symbol)
+airline_df_drop_phoenix <- as.data.frame(results %>%
+  filter(city!="Phoenix") %>%
+  group_by_(.dots=dots) %>%
+  summarise(frequency = sum(freq)) %>%
+  mutate(prop = round(frequency / sum(frequency),2))) %>%
+  arrange(airline)
+airline_df_drop_phoenix$with_phoenix = airline_df$prop
+
+
+graph_two <- ggplot(airline_df_drop_phoenix, 
+                    aes(x=airline, y=prop, fill=ontime)) +
+  geom_bar(stat="identity") + 
+  labs(x="", y="", title="Flight Delays") + 
+  scale_fill_discrete(guide = guide_legend(title="Flights"), 
+                      labels=c("Delayed", "On Time")) +
+  scale_y_continuous(labels=percent)
+
+library(gridExtra)
+grid.arrange(graph_one, graph_two, ncol=2)
+```
+So, stick with ALASKA airlines (unless you're going to Phoenix).
