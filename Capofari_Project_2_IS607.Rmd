@@ -1,0 +1,187 @@
+---
+title: "MLB Franchise Wins"
+author: "Nicholas Capofari"
+date: "October 7, 2015"
+output: 
+  html_document:
+    toc: true
+    theme: united
+    fig_width: 10
+    fig_height: 6
+---
+
+###Data Munging                                                         
+The following are win totals for each major league franchise since 1901.
+Here is a look at the original data set.
+```{r, echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, comment="", row.names = FALSE}
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(scales)
+library(stringr)
+
+#wins by franchise for all of mlb history
+theFile  = "leagues_MLB__teams_team_wins3000.csv"
+original_baseball <- read.csv(theFile, header = TRUE, stringsAsFactors = FALSE)
+unlink(theFile)
+
+#original data
+head(original_baseball, 3)
+
+#only interested in years since latest expansion
+#this also removes repeat header rows
+baseball <- original_baseball[original_baseball$Year > '1997' & original_baseball$Year < '2016', ]
+
+#use gather to create long data
+#not interested in games played or defunct franchises
+baseball <- as.data.frame(baseball %>%
+  select(-G, -BLA) %>%
+  gather(Team, Wins, ARI:WSN))
+
+#change all data to numeric
+baseball$Year <- as.numeric(baseball$Year)
+baseball$Wins <- as.numeric(baseball$Wins)
+```
+
+###The Wrangled Data                                                         
+Defunct franchises, extraneous variables, and all years since the last expansion (1998) have been removed for the purpose of this exploration.
+The data has been transformed from "wide data" to "long data".
+```{r, echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, comment="", row.names = FALSE}
+#new data
+head(baseball, 3)
+tail(baseball, 3)
+
+#this function will create line graphs fro each team
+#parameters-
+#   @df data frame for the graph
+#   @x1 x axis values for the graph
+#   @y1 y axis values for the graph
+#   @int1 and int2 horizontal lines
+facet_graphs <- function(df, x1, y1, int1=0, int2=0){
+  #create cool graph
+  #where the graph data comes from
+  graph <- ggplot(df, aes_string(x=x1, y=y1))
+  #type of graph
+  graph <- graph + geom_line(aes(color=Team, group=Team))
+  #add horizontal lines to aid visualization
+  graph <- graph + geom_hline(yintercept=int1, color="blue", linetype="dashed")
+  graph <- graph + geom_hline(yintercept=int2, color="red", linetype="dashed")
+  #create graph for each team
+  facet <- graph + facet_wrap(~Team)
+}
+
+baseball_graph <- facet_graphs(baseball, "Year", "Wins", 90, 70)
+#change orientation of x labels
+baseball_graph <- baseball_graph + theme(axis.text.x = element_text(angle=90, vjust=1, hjust=0))
+
+baseball_graph
+```
+
+###Cumulative Wins                                                         
+New columns were added to the data to represent year over year win totals, average wins per season, and the percent change in wins for each year.
+```{r, echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, comment="", row.names = FALSE}
+#add cumulative wins, average wins, percent change columns
+baseball <- as.data.frame(baseball %>%
+  arrange(Team, Year) %>%
+  group_by(Team) %>%
+  mutate(total_wins=cumsum(Wins)) %>%
+  mutate(avg_wins=round(mean(Wins),0)) %>%
+  mutate(change=round((Wins - lag(Wins, 1))/lag(Wins, 1), 2)))
+
+#change NAs to 0
+baseball[is.na(baseball)] <- 0
+#baseball$percent_change=percent(baseball$change)
+
+#just the last 10 years
+last_10 <- baseball[baseball$Year > 2005, ]
+last_10 <- as.data.frame(last_10 %>% 
+  group_by(Team) %>%
+  mutate(total_wins_10=cumsum(Wins)))
+
+#create a new data frame with just 2015 
+#new columns to rank cumulative wins and wins in the last 10 years
+mlb2015 <- last_10[last_10$Year == 2015, ]
+mlb2015 <- as.data.frame(mlb2015 %>% 
+  select(-change) %>%
+  arrange(-total_wins) %>%
+  mutate(rank=rank(-total_wins)) %>%
+  mutate(rank_ten=rank(-total_wins_10, ties.method = "first")))
+
+last <- length(mlb2015$rank)
+```
+The team with the most wins since 1998 is:  
+`r mlb2015$Team[mlb2015$rank == 1]` --- `r mlb2015$total_wins[mlb2015$rank == 1]` wins
+
+The team with the least wins since 1998 is:  
+`r mlb2015$Team[mlb2015$rank == last]` --- `r mlb2015$total_wins[mlb2015$rank == last]` wins  
+
+The teams with the most wins in the last 10 years are:  
+`r mlb2015$Team[mlb2015$rank_ten == 1]` --- `r mlb2015$total_wins_10[mlb2015$rank_ten == 1]` wins  
+
+The teams with the least wins in the last 10 years are:  
+`r mlb2015$Team[mlb2015$rank_ten == last]` --- `r mlb2015$total_wins_10[mlb2015$rank_ten == last]` wins  
+
+The biggest positive percent change in wins is:  
+`r baseball$Team[baseball$change == max(baseball$change)]` `r baseball$Year[baseball$change == max(baseball$change)]` --> `r percent(max(baseball$change))`
+
+The worst:  
+`r baseball$Team[baseball$change == min(baseball$change)]` `r baseball$Year[baseball$change == min(baseball$change)]` --> `r percent(min(baseball$change))`
+
+###The Last 10 World Series Teams                     
+```{r, echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, comment="", row.names = FALSE}
+#create new data frame for world series teams
+#and their last 5 years of data
+ws <- baseball[baseball$Team == 'SFG' & baseball$Year < 2015 & baseball$Year > 2009, ]
+ws$Team <- '2014SFG'
+
+#function that will add world series teams to the data base
+ws_builder <- function(df, x, y){
+  df <- rbind(df, baseball[baseball$Team == x & baseball$Year <= y & baseball$Year > y-5, ])
+  rep <- paste(y, x, sep = "")
+  df$Team <- str_replace_all(df$Team, paste("^", x, "$", sep = ""), rep)
+  df
+}
+
+teams <- c('KCR','BOS','STL','SFG','DET','STL','TEX','SFG','TEX','NYY','PHI','PHI','TBD','BOS','COL','STL','DET','CHW','HOU')
+years <- sort(c(2014, rep(2013:2005, 2)), decreasing = TRUE)
+
+#not the R way to do things but 
+#I had trouble figuring out the best way to do this
+for(i in 1:length(teams)){
+  ws <- ws_builder(ws, teams[i], years[i])
+}
+
+#add column to use as a common x axis
+ws$Years <- c(rep(1:5))
+
+facet_ws <- facet_graphs(ws, "Years", "Wins", 90, 70)
+facet_ws
+```
+
+###METS?  
+The 2015 Mets seem like they fit right in!
+```{r, echo=FALSE, message=FALSE, cache=FALSE, warning=FALSE, comment="", row.names = FALSE}
+ws_mets <- baseball[baseball$Team == 'NYM' & baseball$Year < 2016 & baseball$Year > 2010, ]
+ws_mets$Team <- '2015NYM'
+
+#compare similar teams with the mets
+teams <- c('COL','TBD','TEX','SFG','KCR')
+years <- c(2007, 2008, 2010, 2010, 2014)
+
+#not the R way to do things but 
+#I had trouble figuring out the best way to do this
+for(i in 1:length(teams)){
+  ws_mets <- ws_builder(ws_mets, teams[i], years[i])
+}
+
+#add column to use as a common x axis
+ws_mets$Years <- c(rep(1:5))
+
+graph <- ggplot(ws_mets, aes_string(x="Years", y="Wins"))
+#type of graph
+graph <- graph + geom_line(aes(color=Team, group=Team))
+#add horizontal lines to aid visualization
+graph <- graph + geom_hline(yintercept=90, color="blue", linetype="dashed")
+graph <- graph + geom_hline(yintercept=70, color="red", linetype="dashed")
+graph
+```
