@@ -1,0 +1,70 @@
+---
+title: "Jets and Giants"
+author: "Nicholas Capofari"
+date: "October 9, 2015"
+output: 
+  html_document:
+    theme: united
+    fig_width: 10
+---
+
+The sample data is a .csv file that has some of the offensive statistics for the Jets and Giants.  Here is what the sample data looked like.
+```{r, message=FALSE, warning=FALSE, comment=""}
+library(tidyr)
+library(dplyr)
+library(zoo)
+library(stringr)
+library(scales)
+
+#import .csv file
+theFile = "nfl_stats.csv"
+stats <- read.csv(theFile, header = FALSE, stringsAsFactors = FALSE)
+unlink(theFile)
+
+head(stats)
+
+#place header in same row
+stats$V1[2] <- stats$V1[1]
+stats$V2[2] <- stats$V2[1]
+
+#add header row, remove superflorous rows
+header <- c("Team","Stats",2007:2014)
+colnames(stats) <- header
+stats <- stats[-c(1,2,7), ]
+
+#change all blank cells in team column to NA
+stats$Team <- ifelse(stats$Team == "", NA, stats$Team)
+#so I can repeat the team names in the columns
+stats$Team <- na.locf(stats$Team, na.rm=TRUE)
+
+#change Yds to Yards
+stats$Stats <- str_replace_all(stats$Stats, "Yds", "Yards")
+
+#gather the data to create an observation for each team by year per stat
+new_stats <- stats %>%
+  gather(Year, Amount, 3:10)
+
+#change all data to numeric
+new_stats$Amount <- as.numeric(new_stats$Amount)
+```
+
+The data has been transformed from wide to long.
+```{r, message=FALSE, warning=FALSE, comment=""}
+head(new_stats)
+```
+
+Now, we can perform some analysis.
+```{r, message=FALSE, warning=FALSE, comment=""}
+#add column for total yards and % of yards for passing/rushing
+yards <- as.data.frame(new_stats %>%
+  filter(grepl('Yards', Stats)) %>%
+  group_by(Team, Year) %>%
+  mutate(total_yards=sum(Amount)) %>%
+  mutate(rate=(Amount/total_yards)) %>%
+  filter(rate > .66)) %>%
+  arrange(-rate, Year)
+```
+The following is every instance where a team passed or rushed more than 66% of the time:
+```{r, message=FALSE, warning=FALSE, comment=""}
+yards
+```
