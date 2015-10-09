@@ -18,7 +18,7 @@ options(width=80)
 library(DBI)
 library(RMySQL)
 
-con <- dbConnect(RMySQL::MySQL(), user="root", password="Elena1781", dbname = "week_6_db")
+con <- dbConnect(RMySQL::MySQL(), user="root", password="********", dbname = "week_6_db")
 results <- dbReadTable(con, "data_w6", row.names = NULL)
 dis <- dbDisconnect(con)
 
