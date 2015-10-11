@@ -1,0 +1,76 @@
+---
+title: "Presidents"
+author: "Nicholas Capofari"
+date: "October 9, 2015"
+output: html_document
+---
+
+This is a list of all United States presidents.
+*Note: Multiple entries appear for a president whenever there was a change in the office of vice president.*
+```{r}
+#this part was adapted from Jared Lander's 'R for Everyone'
+library(tidyr)
+library(dplyr)
+library(stringr)
+library(XML)
+url <- "http://www.loc.gov/rr/print/list/057_chron.html"
+pres <- readHTMLTable(url, which=3, as.data.frame = TRUE, skip.rows = 1, header = TRUE, stringAsFactors = FALSE)
+head(pres)
+```
+Transforming the data:
+```{r}
+#remove rows that are of no value
+pres <- pres[c(2, 1)]
+pres <- pres[-c(65:68), ]
+
+#split up the years into a start and end column
+pres2 <- pres %>% 
+  separate(YEAR, c("start", "end"), 4)
+#get rid of non digits
+pres2$end <- str_extract(pres2$end, "\\d{4}")
+#change numbers to numeric data types
+pres2$start <- as.numeric(pres2$start)
+pres2$end <- as.numeric(pres2$end)
+
+#start and end years for each president
+pres3 <- as.data.frame(pres2 %>%
+  group_by(PRESIDENT) %>%
+  mutate(START=min(start, na.rm = TRUE)) %>%
+  mutate(END=max(end, na.rm = TRUE)))
+
+#if the end year is NA change it to the start year
+pres3$END <- with(pres3, ifelse(is.na(END), START, END))
+                  
+#change OBAMAS end date
+pres3$END[64] <- 2017
+
+#remove duplicate row, add column for term length
+pres3 <- pres3 %>% 
+  unique() %>%
+  mutate(LENGTH=(END-START))
+
+#remove columns
+pres3 <- pres3[ ,c(1, 4:6)]
+
+#add Bernie
+PRESIDENT <- "Bernie Sanders"
+START <- as.integer(2017)
+END <- as.integer(2025)
+LENGTH <- as.integer(8)
+bernie <- data.frame(PRESIDENT, START, END, LENGTH)
+pres3 <- rbind(pres3, bernie)
+
+#fix grover cleveland's length
+pres3$LENGTH[22] <- 8
+```
+Here is the transformed data:
+```{r}
+head(pres3)
+tail(pres3)
+```
+Now some data analysis...
+All President's who served less than a full term in office:
+```{r}
+p <- pres3[pres3$LENGTH < 4, ]
+p
+```
