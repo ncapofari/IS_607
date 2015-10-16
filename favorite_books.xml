@@ -1,0 +1,32 @@
+<?xml version="1.1"?>
+<favorite_children_books>
+	<book id="1">
+		<title>The Day the Babies Crawled Away</title>
+		<author>Peggy Rathman</author>
+		<illustrator>Peggy Rathman</illustrator>
+		<date>2003</date>
+		<pages>40</pages>
+	</book>
+
+	<book id="2">
+		<title>Locomotive</title>
+		<author>Brian Floca</author>
+		<illustrator>Brian Floca</illustrator>
+		<date>2013</date>
+		<pages>64</pages>
+	</book>
+	<book id="3">
+		<title>Cha-cha Chimps</title>
+		<author>Julia Durango</author>
+		<illustrator>Elanor Taylor</illustrator>
+		<date>2010</date>
+		<pages>32</pages>
+	</book>
+	<book id="4">
+		<title>The Juniper Tree and Other Tales from Grimm</title>
+		<author author1="Jacob Grimm" author2="Wilhelm Grimm"/>
+		<illustrator>Maurice Sendak</illustrator>
+		<date>1973</date>
+		<pages>352</pages>
+	</book>  
+</favorite_children_books>
