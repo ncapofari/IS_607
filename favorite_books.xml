@@ -7,7 +7,6 @@
 		<date>2003</date>
 		<pages>40</pages>
 	</book>
-
 	<book id="2">
 		<title>Locomotive</title>
 		<author>Brian Floca</author>
@@ -24,7 +23,8 @@
 	</book>
 	<book id="4">
 		<title>The Juniper Tree and Other Tales from Grimm</title>
-		<author author1="Jacob Grimm" author2="Wilhelm Grimm"/>
+		<author>Jacob Grimm</author> 
+		<author>Wilhelm Grimm</author>
 		<illustrator>Maurice Sendak</illustrator>
 		<date>1973</date>
 		<pages>352</pages>
