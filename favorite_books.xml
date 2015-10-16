@@ -23,7 +23,7 @@
 	</book>
 	<book id="4">
 		<title>The Juniper Tree and Other Tales from Grimm</title>
-		<author>author1="Jacob Grimm" author2="Wilhelm Grimm"/>
+		<author author1="Jacob Grimm" author2="Wilhelm Grimm"/>
 		<illustrator>Maurice Sendak</illustrator>
 		<date>1973</date>
 		<pages>352</pages>
