@@ -3,26 +3,28 @@
 	"title" : "The Day the Babies Crawled Away",
 	"author" : ["Peggy Rathman"],
 	"illustrator" : "Peggy Rathman",
-	"date" : 2003
+	"date" : 2003,
 	"pages" : 40
 	},
 	{
 	"title" : "Locomotive",
 	"author" : ["Brian Floca"],
 	"illustrator" : "Brian Floca",
-	"date" : 2013
+	"date" : 2013,
 	"pages" : 64
 	},
+	{
 	"title" : "Cha-cha Chimps",
 	"author" : ["Peggy Rathman"],
 	"illustrator" : "Julia Durango",
-	"date" : 2010
+	"date" : 2010,
 	"pages" : 32
 	},
+	{
 	"title" : "The Juniper Tree and Other Tales from Grimm",
 	"author" : ["Jacob Grimm", "Wilhelm Grimm"],
 	"illustrator" : "Maurice Sendak",
-	"date" : 1973
+	"date" : 1973,
 	"pages" : 352
 	}]
 }
