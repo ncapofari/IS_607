@@ -1,0 +1,55 @@
+---
+title: "NYC Neighborhood Information"
+author: "Nicholas Capofari"
+date: "October 30, 2015"
+output: html_document
+---
+
+The following is a function that accesses the New York Times District API.
+```{r warning=FALSE}
+suppressMessages(library(RCurl))
+suppressMessages(library(stringr))
+suppressMessages(library(jsonlite))
+suppressMessages(library(dplyr))
+
+#keeping it simple
+#user enters latitude and longitude
+#function returns name of the nyc neighborhood and voting district info
+getHood <- function(lat=40.758895, lng=-73.985131) {
+  #I'm not sure if I'm using this handle right
+  handle <- getCurlHandle(httpheader = 
+                            list(from="ncapofari@yahoo.com",
+                                'user-agent'=str_c(R.version$version.string,
+                                ", ", R.version$platform)))
+  #basic url without the parameters
+  base_url <- "http://api.nytimes.com/svc/politics/v2/districts.json?"
+  #coordinates from user
+  coords <- paste("lat=", toString(lat), "&lng=", toString(lng), sep="")
+  #my api key
+  nyt_key <- "&api-key=bbb8916f8e8b9a656e88fd21ee46d7a6:12:36728615"
+  #everything together
+  feed_url <- paste(base_url, coords, nyt_key, sep="")
+  #use jsonlite package to convert data to R data
+  json_data <- fromJSON(getURL(feed_url, curl=handle))
+  #keep the info we need
+  district_df <- data.frame(json_data$result$district, 
+                            json_data$result$level, 
+                            stringsAsFactors = FALSE)
+  #if the coordinates were bad (only NYC coords are accepted)
+  if(length(colnames(district_df)) != 2){ return("Only NYC coordinates are allowed.") }
+  colnames(district_df) <- c("District", "Level")
+  return(arrange(district_df, desc(District)))
+}
+```
+
+Test the function.
+```{r}
+test <- getHood(40.630064, -74.084583)
+test
+```
+
+Test the function with bad data.
+```{r}
+bad_test <- getHood(40.630064, 74.084583)
+bad_test
+```
